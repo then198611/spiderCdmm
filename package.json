@@ -1,0 +1,16 @@
+{
+  "name": "cdmmspider",
+  "version": "1.0.0",
+  "description": "cdmm spider crawler",
+  "main": "main.js",
+  "dependencies": {
+    "crawler": "^0.4.3",
+    "mysql": "^2.12.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
