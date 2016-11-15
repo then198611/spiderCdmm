@@ -24,8 +24,9 @@ var query=function(sql,callback){
     });
 };
 function setDate(date) {
-    var d = date ? new Date(date) : new Date();
-    return parseInt(d.getTime() / 1000);
+    var d = date && new Date(date) ?  new Date(date) : new Date();
+    var time = !isNaN(d.getTime()) ? parseInt(d.getTime() / 1000) : parseInt(new Date().getTime()/1000);
+    return time;
 }
 
 const homePage = 'http://cd.mamacn.com/forum.php';
@@ -77,8 +78,9 @@ var categoryQueue = function (uri) {
                     var href = $(this).find('th a').attr('href'),
                             title = $(this).find('th a').text(),
                             author = $(this).find('.by').eq(0).find('a').text(),
-                            cate = $('.xs2>a').text();
-                    setThreadQuery(title, author.replace(/\"/g,'\\"'), cate, href,function (user_id, cate_id, sub_id,user,tit,uri) {
+                            cate = $('.xs2>a').text(),
+                            views =  parseInt($(this).find('.num em').text()) || 0;
+                    setThreadQuery(title.replace(/\"/g,'\\"'), author.replace(/\"/g,'\\"'), cate, href,views,function (user_id, cate_id, sub_id,user,tit,uri) {
                         goToDetail(user_id, cate_id, sub_id, user, tit, uri);
                     });
                 }
@@ -91,10 +93,10 @@ var categoryQueue = function (uri) {
 };
 
 //插入帖子
-function setThreadQuery(title, author, cate, href,callback) {
+function setThreadQuery(title, author, cate, href,views,callback) {
     existUser(author, function (user_id) {
         user_id && existCate(cate, function (cate_id) {
-            cate_id && existTitle(cate_id, author, user_id, title, function (sub_id) {
+            cate_id && existTitle(cate_id, author, user_id, title,views, function (sub_id) {
                 sub_id && callback && callback(user_id, cate_id, sub_id,author,title,href);
             })
         })
@@ -182,14 +184,14 @@ function existCate(cate, callback) {
     })
 }
 //判断主题存在并返回id
-function existTitle(cate_id, username, user_id, title, callback) {
+function existTitle(cate_id, username, user_id, title,views,callback) {
     query('select tid from pre_forum_thread where authorid = ' + user_id + ' and subject = "' + title + '"', function (err, rows) {
         if (!err) {
             if (rows && rows.length) {
                 callback && callback(rows[0].tid);
             }
             else {
-                query('INSERT INTO pre_forum_thread (fid,author,authorid,subject) VALUES (' + cate_id + ',"' + username + '",' + user_id + ',"' + title + '");', function (err, rows) {
+                query('INSERT INTO pre_forum_thread (fid,author,authorid,subject,views) VALUES (' + cate_id + ',"' + username + '",' + user_id + ',"' + title + '",'+views+');', function (err, rows) {
                     if (!err) {
                         var sub_id = rows.insertId;
                         query('update pre_forum_forum set threads = threads+1 where fid=' + cate_id,function(){
@@ -215,7 +217,7 @@ function existComment(author, user_id, cate_id, sub_id, title, content, date, co
             if (!err) {
                 if (rows && !rows.length) {
                     //一楼  楼主 帖子内容
-                    query('UPDATE pre_forum_thread set maxposition = maxposition+1,dateline=' + setDate(date) + ',lastposter = "' + author + '" where tid = ' + sub_id, function (err, rows) {
+                    query('UPDATE pre_forum_thread set maxposition = maxposition+1,lastpost='+setDate(date)+',dateline=' + setDate(date) + ',lastposter = "' + author + '" where tid = ' + sub_id, function (err, rows) {
                         if (!err) {
                             console.log('update thread');
                         }
