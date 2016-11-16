@@ -217,6 +217,7 @@ function existComment(author, user_id, cate_id, sub_id, title, content, date, co
             if (!err) {
                 if (rows && !rows.length) {
                     //一楼  楼主 帖子内容
+
                     query('UPDATE pre_forum_thread set maxposition = maxposition+1,lastpost='+setDate(date)+',dateline=' + setDate(date) + ',lastposter = "' + author + '" where tid = ' + sub_id, function (err, rows) {
                         if (!err) {
                             console.log('update thread');
@@ -225,15 +226,18 @@ function existComment(author, user_id, cate_id, sub_id, title, content, date, co
                             console.log('UPDATE THREAD:' + err)
                         }
                     });
-                    query('INSERT INTO pre_forum_post (fid,tid,author,authorid,subject,message,dateline,position,first,usesig,bbcodeoff,smileyoff) VALUES (' + cate_id + ',' + sub_id + ',"' + author + '",' + user_id + ',"' + title + '","' + content + '",' + setDate(date) + ',' + (i + 1) + ',1,1,-1,-1);', function (err, rows) {
-                        if (!err) {
-                            console.log('insert post 1' + sub_id);
-                            query('update pre_forum_forum set posts = posts+1 where fid=' + cate_id);
-                        }
-                        else {
-                            console.log(err);
-                        }
-                    });
+                    query('INSERT INTO pre_forum_post_tableid () VALUES ()',function(err,rows){
+                        query('INSERT INTO pre_forum_post (pid,fid,tid,author,authorid,subject,message,dateline,first,usesig,bbcodeoff,smileyoff) VALUES ('+rows.insertId+ ',' + cate_id + ',' + sub_id + ',"' + author + '",' + user_id + ',"' + title + '","' + content + '",' + setDate(date) + ',1,1,-1,-1);', function (err, rows) {
+                            if (!err) {
+                                console.log('insert post 1' + sub_id);
+                                query('update pre_forum_forum set posts = posts+1 where fid=' + cate_id);
+                            }
+                            else {
+                                console.log(err);
+                            }
+                        });
+                    })
+
                 }
             }
             else {
@@ -254,15 +258,17 @@ function existComment(author, user_id, cate_id, sub_id, title, content, date, co
                                 console.log('UPDATE THREAD:' + err)
                             }
                         });
-                        query('INSERT INTO pre_forum_post (fid,tid,author,authorid,subject,message,dateline,position,first,usesig,bbcodeoff,smileyoff) VALUES (' + cate_id + ',' + sub_id + ',"' + comment_user + '",' + comment_user_id + ',"","' + content + '",' + setDate(date) + ',' + (i + 1) + ',0,1,-1,-1);', function (err, rows) {
-                            if (!err) {
-                                console.log('insert post other');
-                                query('update pre_forum_forum set posts = posts+1 where fid=' + cate_id);
-                            }
-                            else {
-                                console.log(err);
-                            }
-                        });
+                        query('INSERT INTO pre_forum_post_tableid () VALUES ()',function(err,rows) {
+                            query('INSERT INTO pre_forum_post (pid,fid,tid,author,authorid,subject,message,dateline,first,usesig,bbcodeoff,smileyoff) VALUES ('+rows.insertId+ ',' + cate_id + ',' + sub_id + ',"' + comment_user + '",' + comment_user_id + ',"","' + content + '",' + setDate(date) + ',0,1,-1,-1);', function (err, rows) {
+                                if (!err) {
+                                    console.log('insert post other');
+                                    query('update pre_forum_forum set posts = posts+1 where fid=' + cate_id);
+                                }
+                                else {
+                                    console.log(err);
+                                }
+                            });
+                        })
                     }
                 }
                 else {
